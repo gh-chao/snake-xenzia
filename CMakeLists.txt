@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.3)
 project(snake_xenzia)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 
-set(SOURCE_FILES main.c)
+set(SOURCE_FILES main.c snake.c snake.h)
 add_executable(snake_xenzia ${SOURCE_FILES})
+
+target_link_libraries(snake_xenzia ncurses)
