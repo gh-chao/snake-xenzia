@@ -13,7 +13,12 @@
 
 typedef struct snake {
     int direction;
+
+    int last_tail_x;
+    int last_tail_y;
+
     struct node *head;
+    struct node *tail;
 } snake_t;
 
 typedef struct node {
@@ -22,6 +27,6 @@ typedef struct node {
     struct node *next;
 } node_t;
 
-void snake_construct(snake_t *this);
-
+void snake_construct(snake_t *this, int x, int y);
+void snake_destruct(snake_t *this);
 void snake_run(snake_t *this);
