@@ -1,65 +1,70 @@
 #include <stdlib.h>
 #include "snake.h"
 
-void snake_construct(snake_t *this, int x, int y) {
-    this->direction = UP;
-    this->head = (node_t *) malloc(sizeof(node_t));
+void snake_construct(snake_s *this, int x, int y) {
+    this->head = (node_s *) malloc(sizeof(node_s));
     this->head->x = x;
     this->head->y = y;
-    this->tail = this->head;
+    this->head->next = NULL;
 }
 
-void snake_run(snake_t *this) {
-    node_t *p = this->head->next;
+void snake_destruct(snake_s *this) {
+
+}
+
+void snake_run(snake_s *this, int direction) {
+    this->direction = direction;
     int x = this->head->x;
     int y = this->head->y;
+    int x2, y2;
 
-    // 记录现在尾巴的位置
-    this->last_tail_x = this->tail->x;
-    this->last_tail_y = this->tail->y;
+    this->head->x = snake_next_x(this, direction);
+    this->head->y = snake_next_y(this, direction);
 
-    // 脑袋向前移动
-    switch (this->direction) {
-        case UP:
-            this->head->y --;
-            break;
-        case DOWN:
-            this->head->y ++;
-            break;
-        case LEFT:
-            this->head->x --;
-            break;
-        case RIGHT:
-            this->head->x ++;
-            break;
-        default:
-            exit(-1);
+    node_s *p = this->head->next;
+
+    while (p != NULL) {
+        x2 = p->x;
+        y2 = p->y;
+
+        p->x = x;
+        p->y = y;
+
+        x = x2;
+        y = y2;
+
+        p = p->next;
     }
 
-    // 身子向前移动
-    int tmp;
-    while (p != NULL) {
-        tmp = p->x;
-        p->x = x;
-        x = tmp;
-        tmp = p->y;
-        p->y = y;
-        y = tmp;
-        p = p->next;
+}
+
+
+void snake_eat(snake_s *this, food_s *food) {
+    node_s * n = (node_s *)malloc(sizeof(node_s));
+    n->x = food->x;
+    n->y = food->y;
+    n->next = this->head;
+    this->head = n;
+}
+
+int snake_next_x(snake_s *this, int direction) {
+    switch (direction) {
+        case DIRECTION_LEFT:
+            return this->head->x - 1;
+        case DIRECTION_RIGHT:
+            return this->head->x + 1;
+        default:
+            return this->head->x;
     }
 }
 
-void snake_destruct(snake_t *this) {
-    node_t *current = this->head;
-    node_t *next = current->next;
-    this->head = NULL;
-
-    while (NULL != current) {
-        free(current);
-        current = next;
-        if (current != NULL) {
-            next = current->next;
-        }
+int snake_next_y(snake_s *this, int direction) {
+    switch (direction) {
+        case DIRECTION_UP:
+            return this->head->y - 1;
+        case DIRECTION_DOWN:
+            return this->head->y + 1;
+        default:
+            return this->head->y;
     }
-
 }
