@@ -1,7 +1,3 @@
-//
-// Created by leo on 15/12/6.
-//
-
 #include <ncurses.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -177,6 +173,7 @@ void game_end(game_s *this) {
     if (this->pthread_t_run) {
         pthread_cancel(this->pthread_t_run);
     }
+    snake_destruct(this->snake);
     clear();
     char *welcomes = "Game Over";
     int x = (int) ((this->scene_x - strlen(welcomes)) / 2 - 2);

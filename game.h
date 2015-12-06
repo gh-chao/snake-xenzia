@@ -1,13 +1,10 @@
 #include <pthread.h>
-
 #include "snake.h"
 
 #ifndef SNAKE_XENZIA_GAME_H
 #define SNAKE_XENZIA_GAME_H
 
 #endif //SNAKE_XENZIA_GAME_H
-
-
 
 // 游戏
 typedef struct game {

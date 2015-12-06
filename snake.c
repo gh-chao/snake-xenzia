@@ -9,7 +9,13 @@ void snake_construct(snake_s *this, int x, int y) {
 }
 
 void snake_destruct(snake_s *this) {
-
+    node_s *p = this->head;
+    node_s *next;
+    while (p != NULL) {
+        next = p->next;
+        free(p);
+        p = next;
+    }
 }
 
 void snake_run(snake_s *this, int direction) {
