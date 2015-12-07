@@ -1,6 +1,3 @@
-#include <ncurses.h>
-#include <unistd.h>
-#include <stdlib.h>
 #include "game.h"
 
 // 游戏初始化
@@ -28,34 +25,39 @@ void game_destruct(game_s *this) {
 
 // 游戏启动
 void game_start(game_s *this) {
+    // 欢迎界面
     this->view_engine->render_welcome(this);
-    this->view_engine->read_input_key_code();
 
-    // 监听键盘
-    pthread_create(&this->pthread_t_update_direction, NULL, (void *(*)(void *)) game_thread_get_key_input, this);
+    // 游戏控制
+    pthread_create(&this->pthread_t_control, NULL, (void *(*)(void *)) game_thread_control, this);
     // 投食
     pthread_create(&this->pthread_t_feeding, NULL, (void *(*)(void *)) game_thread_feeding, this);
     // 运行
     pthread_create(&this->pthread_t_run, NULL, (void *(*)(void *)) game_thread_run, this);
 
     // 等待结束
-    pthread_join(this->pthread_t_update_direction, NULL);
+    pthread_join(this->pthread_t_control, NULL);
     pthread_join(this->pthread_t_feeding, NULL);
     pthread_join(this->pthread_t_run, NULL);
 
-    this->view_engine->read_input_key_code();
+    // 游戏结束界面
+    this->view_engine->render_game_over(this);
 }
 
 // 游戏运行
 void *game_thread_run(game_s *this) {
     while (TRUE) {
-        usleep(500000);
+        for (int i = 0; i < 50; ++i) {
+            pthread_testcancel();
+            usleep(10000);
+        }
+
         int next_x = snake_next_x(this->snake, this->snake_direction);
         int next_y = snake_next_y(this->snake, this->snake_direction);
 
         // 判断撞墙
         if (next_x == 0 || next_x == this->scene_x || next_y == 0 || next_y == this->scene_y) {
-            game_end(this);
+            game_over(this);
             return NULL;
         }
 
@@ -63,7 +65,7 @@ void *game_thread_run(game_s *this) {
         node_s *p = this->snake->head;
         while (p != NULL) {
             if(next_x == p->x && next_y == p->y) {
-                game_end(this);
+                game_over(this);
                 return NULL;
             }
             p = p->next;
@@ -77,8 +79,6 @@ void *game_thread_run(game_s *this) {
                 // 把食物从场景中去掉
                 free(this->food);
                 this->food = NULL;
-                // 闪烁一下屏幕
-                flash();
                 this->view_engine->render_body(this);
                 continue;
             }
@@ -89,28 +89,27 @@ void *game_thread_run(game_s *this) {
     }
 }
 
-void *game_thread_get_key_input(game_s *this) {
+// 游戏控制
+void *game_thread_control(game_s *this) {
     while (TRUE) {
         int direction = 0;
-        switch (this->view_engine->read_input_key_code()) {
-            case 'w':
-            case KEY_UP:
+        pthread_testcancel();
+        switch (this->view_engine->read_control()) {
+            case CONTROL_UP:
                 direction = DIRECTION_UP;
                 break;
-            case 's':
-            case KEY_DOWN:
+            case CONTROL_DOWN:
                 direction = DIRECTION_DOWN;
                 break;
-            case 'a':
-            case KEY_LEFT:
+            case CONTROL_LEFT:
                 direction = DIRECTION_LEFT;
                 break;
-            case 'd':
-            case KEY_RIGHT:
+            case CONTROL_RIGHT:
                 direction = DIRECTION_RIGHT;
                 break;
-            case 'q':
-                game_end(this);
+            case CONTROL_QUIT:
+                game_over(this);
+                break;
             default:
                 break;
         }
@@ -118,13 +117,17 @@ void *game_thread_get_key_input(game_s *this) {
             this->snake_direction = direction;
         }
     }
+
     return NULL;
 }
 
 void *game_thread_feeding(game_s *this) {
     while (TRUE) {
         // 五秒投食一次
-        usleep(5000000);
+        for (int i = 0; i < 500; ++i) {
+            pthread_testcancel();
+            usleep(10000);
+        }
         game_feeding(this);
     }
     return NULL;
@@ -156,18 +159,17 @@ void game_feeding(game_s *this) {
     this->food->y = y;
 }
 
-void game_end(game_s *this) {
-    // 结束
+void game_over(game_s *this) {
+    // 关闭所有线程
     if (this->pthread_t_feeding) {
         pthread_cancel(this->pthread_t_feeding);
     }
-    if (this->pthread_t_update_direction) {
-        pthread_cancel(this->pthread_t_update_direction);
+    if (this->pthread_t_control) {
+        pthread_cancel(this->pthread_t_control);
     }
     if (this->pthread_t_run) {
         pthread_cancel(this->pthread_t_run);
     }
-    this->view_engine->render_game_over(this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

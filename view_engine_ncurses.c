@@ -6,7 +6,7 @@ void view_engine_ncursess_init(view_engine_s *view_engine) {
     view_engine->render_welcome = &view_engine_ncursess_render_welcome;
     view_engine->render_body = &view_engine_ncursess_render_body;
     view_engine->render_game_over = &view_engine_ncursess_render_game_over;
-    view_engine->read_input_key_code = &view_engine_ncursess_read_input_key_code;
+    view_engine->read_control = &view_engine_ncursess_read_control;
 }
 
 void view_engine_ncursess_construct(view_engine_s *view_engine) {
@@ -23,11 +23,13 @@ void view_engine_ncursess_destruct(view_engine_s *view_engine) {
 
 void view_engine_ncursess_render_welcome(game_s *game) {
     clear();
-    char *welcomes = "Snake Xenzia";
+    border('*', '*', '*', '*', '*', '*', '*', '*');
+    char welcomes[] = "Snake Xenzia";
     int x = (int) ((game->scene_x - strlen(welcomes)) / 2 - 2);
     int y = game->scene_y / 2 - 2;
     mvprintw(y, x, welcomes);
     refresh();
+    getch();
 }
 
 void view_engine_ncursess_render_body(game_s *game) {
@@ -49,13 +51,33 @@ void view_engine_ncursess_render_body(game_s *game) {
 
 void view_engine_ncursess_render_game_over(game_s *game) {
     clear();
-    char *welcomes = "Game Over";
+    border('*', '*', '*', '*', '*', '*', '*', '*');
+    char welcomes[] = "Game Over";
     int x = (int) ((game->scene_x - strlen(welcomes)) / 2 - 2);
     int y = game->scene_y / 2 - 2;
     mvprintw(y, x, welcomes);
     refresh();
+    getch();
 }
 
-int view_engine_ncursess_read_input_key_code() {
-    return getch();
+int view_engine_ncursess_read_control() {
+    int ch =  getch();
+    switch (ch) {
+        case 'w':
+        case KEY_UP:
+            return CONTROL_UP;
+        case 's':
+        case KEY_DOWN:
+            return CONTROL_DOWN;
+        case 'a':
+        case KEY_LEFT:
+            return CONTROL_LEFT;
+        case 'd':
+        case KEY_RIGHT:
+            return CONTROL_RIGHT;
+        case 'q':
+            return CONTROL_QUIT;
+        default:
+            return 0;
+    }
 }
