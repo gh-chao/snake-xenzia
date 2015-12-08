@@ -55,10 +55,10 @@ void ui_ncurses_render_body(ui_s *this, game_s *game) {
         mvprintw(this->scene_y, i, "*");
     }
     // 渲染蛇的身体
-    node_s *p = game->snake->head;
-    while (p != NULL) {
-        mvprintw(p->y, p->x, "*");
-        p = p->next;
+    node_s *node = game->snake->head;
+    while (node != NULL) {
+        mvprintw(node->coordinate->y, node->coordinate->x, "*");
+        node = node->next;
     }
     //渲染食物
     if (game->food != NULL) {

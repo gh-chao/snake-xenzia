@@ -19,16 +19,18 @@
 #define CONTROL_LEFT DIRECTION_LEFT
 #define CONTROL_RIGHT DIRECTION_RIGHT
 
-// 食物
-typedef struct food {
+// 坐标
+typedef struct coordinate {
     int x;
     int y;
-} food_s;
+} coordinate_s;
+
+// 食物
+typedef coordinate_s food_s;
 
 // 身体节点
 typedef struct node {
-    int x;
-    int y;
+    coordinate_s *coordinate;
     struct node *next;
 } node_s;
 
@@ -46,10 +48,8 @@ void snake_destruct(snake_s *this);
 void snake_run(snake_s *this, int direction);
 // 吃
 void snake_eat(snake_s *this, food_s *food);
-// 计算蛇头下一步x坐标
-int snake_next_x(snake_s *this, int direction);
-// 计算蛇头下一步y坐标
-int snake_next_y(snake_s *this, int direction);
+// 计算蛇头下一步坐标
+void snake_next_coordinate(snake_s *this, coordinate_s *coordinate, int direction);
 
 // 游戏
 typedef struct game {

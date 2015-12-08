@@ -52,16 +52,16 @@ void game_start(game_s *this) {
 // 游戏运行
 void *game_thread_run(game_s *this) {
     while (1) {
-        for (int i = 0; i < 50; ++i) {
+        for (int i = 0; i < 20; ++i) {
             pthread_testcancel();
             usleep(10000);
         }
 
-        int next_x = snake_next_x(this->snake, this->snake_direction);
-        int next_y = snake_next_y(this->snake, this->snake_direction);
+        coordinate_s next;
+        snake_next_coordinate(this->snake, &next, this->snake_direction);
 
         // 判断撞墙
-        if (next_x == 0 || next_x == this->ui->scene_x || next_y == 0 || next_y == this->ui->scene_y) {
+        if (next.x == 0 || next.x == this->ui->scene_x || next.y == 0 || next.y == this->ui->scene_y) {
             game_over(this);
             return NULL;
         }
@@ -69,7 +69,7 @@ void *game_thread_run(game_s *this) {
         // 判断吃到自己的尾巴
         node_s *p = this->snake->head;
         while (p != NULL) {
-            if (next_x == p->x && next_y == p->y) {
+            if (next.x == p->coordinate->x && next.y == p->coordinate->y) {
                 game_over(this);
                 return NULL;
             }
@@ -78,7 +78,7 @@ void *game_thread_run(game_s *this) {
         // 存在食物
         if (this->food != NULL) {
             //判断是否可以吃到食物
-            if (next_x == this->food->x && next_y == this->food->y) {
+            if (next.x == this->food->x && next.y == this->food->y) {
                 // 吃掉食物
                 snake_eat(this->snake, this->food);
                 // 分数+1
@@ -156,7 +156,7 @@ void game_feeding(game_s *this) {
     node_s *p = this->snake->head;
     while (NULL != p) {
         // 冲突
-        if (x == p->x && y == p->y) {
+        if (x == p->coordinate->x && y == p->coordinate->y) {
             // 重新生成
             game_feeding(this);
             return;
@@ -184,8 +184,9 @@ void game_over(game_s *this) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void snake_construct(snake_s *this, int x, int y) {
     this->head = (node_s *) malloc(sizeof(node_s));
-    this->head->x = x;
-    this->head->y = y;
+    this->head->coordinate = (coordinate_s *) malloc(sizeof(coordinate_s));
+    this->head->coordinate->x = x;
+    this->head->coordinate->y = y;
     this->head->next = NULL;
 }
 
@@ -196,60 +197,59 @@ void snake_destruct(snake_s *this) {
     while (p != NULL) {
         next = p->next;
         p->next = NULL;
+        free(p->coordinate);
         free(p);
         p = next;
     }
 }
 
+// 蛇头前进
 void snake_run(snake_s *this, int direction) {
     this->direction = direction;
-    int x = this->head->x;
-    int y = this->head->y;
-    int x2, y2;
+    //当前节点新的坐标位置
+    coordinate_s *coordinate = (coordinate_s *) malloc(sizeof(coordinate_s));
+    snake_next_coordinate(this, coordinate, direction);
 
-    this->head->x = snake_next_x(this, direction);
-    this->head->y = snake_next_y(this, direction);
+    coordinate_s *coordinate_tmp;
 
-    node_s *p = this->head->next;
-
+    node_s *p = this->head;
     while (p != NULL) {
-        x2 = p->x;
-        y2 = p->y;
-        p->x = x;
-        p->y = y;
-        x = x2;
-        y = y2;
+        coordinate_tmp = p->coordinate;
+        p->coordinate = coordinate;
+        coordinate = coordinate_tmp;
         p = p->next;
     }
-
+    // 最后的坐标释放掉
+    free(coordinate);
 }
 
 void snake_eat(snake_s *this, food_s *food) {
     node_s *n = (node_s *) malloc(sizeof(node_s));
-    n->x = food->x;
-    n->y = food->y;
+    n->coordinate = (coordinate_s *) malloc(sizeof(coordinate_s));
+    n->coordinate->x = food->x;
+    n->coordinate->y = food->y;
     n->next = this->head;
     this->head = n;
 }
 
-int snake_next_x(snake_s *this, int direction) {
+// 计算下一次蛇头的坐标
+void snake_next_coordinate(snake_s *this, coordinate_s *coordinate, int direction) {
+    coordinate->x = this->head->coordinate->x;
+    coordinate->y = this->head->coordinate->y;
     switch (direction) {
         case DIRECTION_LEFT:
-            return this->head->x - 1;
+            coordinate->x--;
+            break;
         case DIRECTION_RIGHT:
-            return this->head->x + 1;
-        default:
-            return this->head->x;
-    }
-}
-
-int snake_next_y(snake_s *this, int direction) {
-    switch (direction) {
+            coordinate->x++;
+            break;
         case DIRECTION_UP:
-            return this->head->y - 1;
+            coordinate->y--;
+            break;
         case DIRECTION_DOWN:
-            return this->head->y + 1;
+            coordinate->y++;
+            break;
         default:
-            return this->head->y;
+            break;
     }
 }
