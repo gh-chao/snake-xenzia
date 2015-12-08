@@ -5,11 +5,6 @@
 void game_construct(game_s *this, ui_s *ui) {
     // 视图引擎
     this->ui = ui;
-    // 游戏检测
-    if (this->ui->scene_x < 30 || this->ui->scene_y < 30) {
-        printf("游戏场景不能小于30*30\n");
-        exit(-1);
-    }
     this->score = 0;
     this->step = 0;
     // 食物指针初始化
