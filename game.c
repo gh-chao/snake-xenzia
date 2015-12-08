@@ -1,19 +1,24 @@
+#include <stdio.h>
 #include "game.h"
 
 // 游戏初始化
-void game_construct(game_s *this, view_engine_s *view_engine, int scene_x, int scene_y) {
+void game_construct(game_s *this, ui_s *ui) {
     // 视图引擎
-    this->view_engine = view_engine;
+    this->ui = ui;
+    // 游戏检测
+    if (this->ui->scene_x < 30 || this->ui->scene_y < 30) {
+        printf("游戏场景不能小于30*30\n");
+        exit(-1);
+    }
+    this->score = 0;
+    this->step = 0;
     // 食物指针初始化
     this->food = NULL;
-    // 设置场景大小
-    this->scene_x = scene_x;
-    this->scene_y = scene_y;
     // 默认前进方向
     this->snake_direction = DIRECTION_UP;
     // 初始化蛇
-    this->snake = (snake_s *)malloc(sizeof(snake_s));
-    snake_construct(this->snake, scene_x / 2, scene_y / 2);
+    this->snake = (snake_s *) malloc(sizeof(snake_s));
+    snake_construct(this->snake, this->ui->scene_x / 2, this->ui->scene_y / 2);
 }
 
 // 游戏释放
@@ -26,7 +31,7 @@ void game_destruct(game_s *this) {
 // 游戏启动
 void game_start(game_s *this) {
     // 欢迎界面
-    this->view_engine->render_welcome(this);
+    this->ui->welcome(this->ui, this);
 
     // 游戏控制
     pthread_create(&this->pthread_t_control, NULL, (void *(*)(void *)) game_thread_control, this);
@@ -41,12 +46,12 @@ void game_start(game_s *this) {
     pthread_join(this->pthread_t_run, NULL);
 
     // 游戏结束界面
-    this->view_engine->render_game_over(this);
+    this->ui->game_over(this->ui, this);
 }
 
 // 游戏运行
 void *game_thread_run(game_s *this) {
-    while (TRUE) {
+    while (1) {
         for (int i = 0; i < 50; ++i) {
             pthread_testcancel();
             usleep(10000);
@@ -56,7 +61,7 @@ void *game_thread_run(game_s *this) {
         int next_y = snake_next_y(this->snake, this->snake_direction);
 
         // 判断撞墙
-        if (next_x == 0 || next_x == this->scene_x || next_y == 0 || next_y == this->scene_y) {
+        if (next_x == 0 || next_x == this->ui->scene_x || next_y == 0 || next_y == this->ui->scene_y) {
             game_over(this);
             return NULL;
         }
@@ -64,7 +69,7 @@ void *game_thread_run(game_s *this) {
         // 判断吃到自己的尾巴
         node_s *p = this->snake->head;
         while (p != NULL) {
-            if(next_x == p->x && next_y == p->y) {
+            if (next_x == p->x && next_y == p->y) {
                 game_over(this);
                 return NULL;
             }
@@ -76,25 +81,29 @@ void *game_thread_run(game_s *this) {
             if (next_x == this->food->x && next_y == this->food->y) {
                 // 吃掉食物
                 snake_eat(this->snake, this->food);
+                // 分数+1
+                this->score += 10;
                 // 把食物从场景中去掉
                 free(this->food);
                 this->food = NULL;
-                this->view_engine->render_body(this);
+                this->ui->render_body(this->ui, this);
                 continue;
             }
         }
         // 蛇运动
         snake_run(this->snake, this->snake_direction);
-        this->view_engine->render_body(this);
+        this->ui->render_body(this->ui, this);
+        // 步数加1
+        this->step++;
     }
 }
 
 // 游戏控制
 void *game_thread_control(game_s *this) {
-    while (TRUE) {
+    while (1) {
         int direction = 0;
         pthread_testcancel();
-        switch (this->view_engine->read_control()) {
+        switch (this->ui->read_control(this->ui)) {
             case CONTROL_UP:
                 direction = DIRECTION_UP;
                 break;
@@ -122,7 +131,7 @@ void *game_thread_control(game_s *this) {
 }
 
 void *game_thread_feeding(game_s *this) {
-    while (TRUE) {
+    while (1) {
         // 五秒投食一次
         for (int i = 0; i < 500; ++i) {
             pthread_testcancel();
@@ -140,8 +149,8 @@ void game_feeding(game_s *this) {
     }
 
     // 生成坐标
-    int x = rand() % (this->scene_x - 1) + 1;
-    int y = rand() % (this->scene_y - 1) + 1;
+    int x = rand() % (this->ui->scene_x - 1) + 1;
+    int y = rand() % (this->ui->scene_y - 1) + 1;
 
     // 判断次坐标是否跟蛇身冲突
     node_s *p = this->snake->head;
@@ -216,7 +225,7 @@ void snake_run(snake_s *this, int direction) {
 }
 
 void snake_eat(snake_s *this, food_s *food) {
-    node_s * n = (node_s *)malloc(sizeof(node_s));
+    node_s *n = (node_s *) malloc(sizeof(node_s));
     n->x = food->x;
     n->y = food->y;
     n->next = this->head;
