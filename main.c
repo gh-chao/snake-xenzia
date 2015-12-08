@@ -2,7 +2,7 @@
 #include "ui_ncurses.h"
 
 int main() {
-    // 初始化视图引擎
+    // 初始化ui
     ui_s ui;
     ui_ncurses_init(&ui);
     ui_ncurses_construct(&ui);
@@ -16,7 +16,7 @@ int main() {
     // 游戏结束
     game_destruct(&snake_xenzia);
 
-    // 视图引擎结束
+    // 视图销毁
     ui_ncurses_destruct(&ui);
     return 0;
 }
