@@ -9,6 +9,7 @@ int main() {
 
     // 游戏检测
     if (ui.scene_x < 30 || ui.scene_y < 30) {
+        ui_ncurses_destruct(&ui);
         printf("游戏场景不能小于30*30\n");
     } else {
         // 创建游戏
