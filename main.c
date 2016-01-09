@@ -1,4 +1,5 @@
 #include <ncurses.h>
+#include "game.h"
 #include "ui_ncurses.h"
 
 int main() {

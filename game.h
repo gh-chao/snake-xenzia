@@ -4,7 +4,7 @@
 
 #ifndef SNAKE_XENZIA_GAME_H
 #define SNAKE_XENZIA_GAME_H
-#endif //SNAKE_XENZIA_GAME_H
+
 
 // 方向
 #define DIRECTION_UP    1
@@ -104,3 +104,5 @@ void *game_thread_feeding(game_s *this);
 void game_feeding(game_s *this);
 // 游戏结束
 void game_over(game_s *this);
+
+#endif //SNAKE_XENZIA_GAME_H
